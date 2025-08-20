@@ -5,6 +5,7 @@ const logsContainer = document.getElementById('logs');
 
 let mediaRecorder;
 let recordedChunks = [];
+let stream;
 
 function log(message, isError = false) {
     const p = document.createElement('p');
@@ -13,18 +14,18 @@ function log(message, isError = false) {
         p.style.color = 'red';
     }
     logsContainer.appendChild(p);
-    logsContainer.scrollTop = logsContainer.scrollHeight;
+    logsContainer.scrollTop = logsTop = logsContainer.scrollHeight;
 }
 
 startButton.addEventListener('click', async () => {
     try {
         startButton.disabled = true;
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         video.srcObject = stream;
-        video.play(); // Включаем видео после начала записи
+        video.play();
 
         const mimeTypes = [
-            'video/webm', // Рекомендуется для большей совместимости
+            'video/webm',
             'video/webm;codecs=vp8,opus',
             'video/mp4',
             'video/mp4;codecs=avc1.42E01E,mp4a.40.2'
@@ -53,7 +54,7 @@ startButton.addEventListener('click', async () => {
 
         mediaRecorder.onerror = event => {
             log(`Ошибка записи: ${event.error}`, true);
-            stopButton.click(); // Останавливаем запись в случае ошибки
+            stopButton.click();
         };
 
         mediaRecorder.onstart = () => {
@@ -72,12 +73,31 @@ startButton.addEventListener('click', async () => {
                 const url = URL.createObjectURL(blob);
                 video.src = url;
                 log('Запись остановлена');
-                // Можно добавить кнопку для скачивания видео
-                const downloadButton = document.createElement('a');
-                downloadButton.href = url;
-                downloadButton.download = 'recorded_video.webm';
-                downloadButton.textContent = 'Скачать видео';
-                logsContainer.appendChild(downloadButton);
+
+                // Сохранение видео в Фото на iPhone
+                if (navigator.webkitGetUserMedia) { // Проверяем, что это iOS
+                    // Используем FileSystem API для сохранения файла
+                    window.webkitRequestFileSystem(window.TEMPORARY, blob.size, function(fs) {
+                        fs.root.getFile('recorded_video.webm', { create: true }, function(fileEntry) {
+                            fileEntry.createWriter(function(fileWriter) {
+                                fileWriter.onwriteend = function() {
+                                    log('Видео сохранено в Фото.');
+                                };
+                                fileWriter.onerror = function(e) {
+                                    log(`Ошибка сохранения видео: ${e}`, true);
+                                };
+                                fileWriter.write(blob);
+                            }, log);
+                        }, log);
+                    }, log);
+                } else {
+                    // Для других браузеров можно предложить пользователю скачать видео
+                    const downloadButton = document.createElement('a');
+                    downloadButton.href = url;
+                    downloadButton.download = 'recorded_video.webm';
+                    downloadButton.textContent = 'Скачать видео';
+                    logsContainer.appendChild(downloadButton);
+                }
             } catch (e) {
                 log(`Ошибка при создании объекта URL: ${e.message}`, true);
             }
