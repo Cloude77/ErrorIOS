@@ -14,7 +14,7 @@ function log(message, isError = false) {
         p.style.color = 'red';
     }
     logsContainer.appendChild(p);
-    logsContainer.scrollTop = logsTop = logsContainer.scrollHeight;
+    logsContainer.scrollTop = logsContainer.scrollHeight;
 }
 
 startButton.addEventListener('click', async () => {
@@ -24,11 +24,12 @@ startButton.addEventListener('click', async () => {
         video.srcObject = stream;
         video.play();
 
+        // Попробуйте различные MIME-типы для MediaRecorder
         const mimeTypes = [
-            'video/webm',
-            'video/webm;codecs=vp8,opus',
+            'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
             'video/mp4',
-            'video/mp4;codecs=avc1.42E01E,mp4a.40.2'
+            'video/webm',
+            'video/webm;codecs=vp8,opus'
         ];
 
         for (let mt of mimeTypes) {
@@ -78,7 +79,7 @@ startButton.addEventListener('click', async () => {
                 if (navigator.webkitGetUserMedia) { // Проверяем, что это iOS
                     // Используем FileSystem API для сохранения файла
                     window.webkitRequestFileSystem(window.TEMPORARY, blob.size, function(fs) {
-                        fs.root.getFile('recorded_video.webm', { create: true }, function(fileEntry) {
+                        fs.root.getFile('recorded_video.mp4', { create: true }, function(fileEntry) {
                             fileEntry.createWriter(function(fileWriter) {
                                 fileWriter.onwriteend = function() {
                                     log('Видео сохранено в Фото.');
@@ -94,7 +95,7 @@ startButton.addEventListener('click', async () => {
                     // Для других браузеров можно предложить пользователю скачать видео
                     const downloadButton = document.createElement('a');
                     downloadButton.href = url;
-                    downloadButton.download = 'recorded_video.webm';
+                    downloadButton.download = 'recorded_video.mp4';
                     downloadButton.textContent = 'Скачать видео';
                     logsContainer.appendChild(downloadButton);
                 }
